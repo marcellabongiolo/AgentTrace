@@ -1,0 +1,36 @@
+services:
+  api:
+    build:
+      context: .
+    environment:
+      AGENTTRACE_DATABASE: /data/agenttrace.db
+      AGENTTRACE_CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - agenttrace-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  dashboard:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_AGENTTRACE_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  agenttrace-data:
