@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Open-source observability, tracing, and real-time guardrails for autonomous AI agents."
 readme = "README.md"
 authors = [
-    { name = "Marcela Bojolo" }
+    { name = "Marcella Bongiolo" }
 ]
 license = { text = "Apache-2.0" }
 classifiers = [
@@ -30,10 +30,15 @@ dependencies = [
 requires-python = ">=3.9"
 
 [project.urls]
-"Homepage" = "https://github.com/agenttrace/agenttrace"
-"Bug Tracker" = "https://github.com/agenttrace/agenttrace/issues"
-"Documentation" = "https://github.com/agenttrace/agenttrace#readme"
+"Homepage" = "https://github.com/marcellabongiolo/AgentTrace"
+"Bug Tracker" = "https://github.com/marcellabongiolo/AgentTrace/issues"
+"Documentation" = "https://github.com/marcellabongiolo/AgentTrace#readme"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["agenttrace*"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
