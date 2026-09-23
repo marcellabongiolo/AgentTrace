@@ -6,7 +6,7 @@ from agenttrace import AgentTrace
 from agenttrace.api import create_app
 
 
-class TestClientSession:
+class ClientSessionAdapter:
     """Small requests.Session-compatible adapter backed by FastAPI TestClient."""
 
     def __init__(self, client: TestClient) -> None:
@@ -22,7 +22,7 @@ def test_sdk_exports_trace_into_api_and_sqlite(tmp_path):
     client = TestClient(app)
     tracer = AgentTrace(
         endpoint="http://testserver/api/v1/traces",
-        session=TestClientSession(client),
+        session=ClientSessionAdapter(client),
     )
 
     @tracer.trace_agent("research-agent")
