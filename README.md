@@ -248,6 +248,10 @@ docker-compose.yml
 
 Read the [architecture and demo guide](docs/architecture-and-demo.md) for component responsibilities, data flow, a reproducible demonstration and trade-offs.
 
+## Deployment security
+
+Before hosting AgentTrace publicly, read the [deployment and security checklist](docs/deployment-security.md). The default local stack is not designed for internet exposure. A separate `docker-compose.private.yml` provides loopback-only access with a mandatory API key, but a public dashboard still requires an authenticated server-side proxy.
+
 ## Roadmap
 
 Possible next steps include PostgreSQL storage, OpenTelemetry adapters, retention controls, server-side dashboard authentication and optional framework integrations.
