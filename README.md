@@ -19,6 +19,33 @@ The project records **application-provided events, tool calls, metrics and error
 - Ruff linting, pytest coverage gate and GitHub Actions CI.
 - Docker images for the API and dashboard plus Docker Compose for local development.
 
+## Try the monitoring demo
+
+You can explore the entire SDK → API → database → dashboard flow locally
+**without an LLM provider key**. The example generates deterministic,
+application-provided telemetry; it does not make external AI model calls.
+
+Start the stack:
+
+```bash
+docker compose up --build
+```
+
+Then, in a separate terminal:
+
+```bash
+python -m pip install -e .
+python -m agenttrace.examples.monitoring_demo --export --runs 3
+```
+
+Open [the local dashboard](http://localhost:3000) and click **Refresh data**.
+The sample includes successful executions, nested spans, tool-call events,
+metrics and an intentionally failed execution.
+
+For an offline, no-export run, omit `--export`. See the
+[architecture and demo guide](docs/architecture-and-demo.md) for details,
+security considerations and limitations.
+
 ## Architecture
 
 ```text
@@ -195,12 +222,14 @@ agenttrace/
   storage.py      SQLite persistence
   examples/
     basic_agent.py
+    monitoring_demo.py
 
 tests/
   test_sdk.py
   test_api.py
   test_storage.py
   test_end_to_end.py
+  test_monitoring_demo.py
 
 web/
   components/
@@ -214,6 +243,10 @@ web/
 Dockerfile
 docker-compose.yml
 ```
+
+## Technical walkthrough
+
+Read the [architecture and demo guide](docs/architecture-and-demo.md) for component responsibilities, data flow, a reproducible demonstration and trade-offs.
 
 ## Roadmap
 
