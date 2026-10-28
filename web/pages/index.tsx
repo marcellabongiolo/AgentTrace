@@ -1,4 +1,13 @@
 import React, { useEffect, useState } from "react";
+import type { GetServerSideProps } from "next";
+import { verifySession } from "../lib/session";
+
+export const getServerSideProps: GetServerSideProps = async ({ req }) => {
+  if (!verifySession(req.cookies.agenttrace_session, process.env.AGENTTRACE_SESSION_SECRET)) {
+    return { redirect: { destination: "/login", permanent: false } };
+  }
+  return { props: {} };
+};
 import TraceTree from "../components/TraceTree";
 import { filterTraces, traceHealth, TraceStatusFilter } from "../lib/monitoring";
 import {
@@ -112,7 +121,7 @@ export default function DashboardPage() {
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <header style={{ marginBottom: 24 }}>
-          <h1 style={{ margin: 0 }}>AgentTrace</h1>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}><h1 style={{ margin: 0 }}>AgentTrace</h1><button type="button" onClick={async () => { await fetch("/api/logout", { method: "POST" }); window.location.assign("/login"); }} style={{ padding: "8px 12px" }}>Sign out</button></div>
           <p style={{ color: "#94a3b8", marginTop: 6 }}>
             Structured observability for AI-agent executions, tool calls, metrics and errors.
           </p>
