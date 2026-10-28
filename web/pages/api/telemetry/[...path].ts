@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { verifySession } from "../../../lib/session";
 
 const DEFAULT_UPSTREAM = "http://api:8000";
 const MAX_TRACE_ID_LENGTH = 128;
@@ -19,6 +20,9 @@ export function resolveTelemetryPath(query: NextApiRequest["query"]): string | n
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
+  if (!verifySession(req.cookies.agenttrace_session, process.env.AGENTTRACE_SESSION_SECRET)) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
