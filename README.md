@@ -113,8 +113,11 @@ npm install
 npm run dev
 ```
 
-The dashboard expects the API at `http://localhost:8000` unless
-`NEXT_PUBLIC_AGENTTRACE_API_URL` is configured differently.
+The browser calls the Next.js same-origin read-only telemetry proxy. For
+local development outside Docker, configure the Next.js server with
+`AGENTTRACE_INTERNAL_API_URL=http://localhost:8000`. Inside Docker the
+proxy uses `http://api:8000` by default. If the API requires a key, set
+`AGENTTRACE_API_KEY` in the server environment (never `NEXT_PUBLIC_*`).
 
 ## Instrument an agent
 
@@ -207,7 +210,7 @@ This repository is designed as a strong local/self-hosted MVP, not a multi-tenan
 
 - API-key authentication is optional and intentionally simple.
 - SQLite is appropriate for the local MVP; a production deployment would normally use a server database.
-- The browser dashboard does not send API secrets. For authenticated production deployments, place the dashboard behind a server-side proxy or another authentication layer.
+- The browser dashboard does not receive API secrets; its Next.js server proxies read-only telemetry requests. This proxy does not authenticate dashboard users: require a login-capable gateway before public deployment.
 - No provider-specific OpenAI, Anthropic, LangChain, CrewAI or AutoGen integration is claimed yet.
 - Prompt replay, distributed tracing backends, retention policies and automated guardrails are future extensions rather than implemented features.
 

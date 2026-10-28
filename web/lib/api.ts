@@ -51,8 +51,7 @@ export interface TraceStats {
   span_count: number;
 }
 
-const API_URL =
-  process.env.NEXT_PUBLIC_AGENTTRACE_API_URL ?? "http://localhost:8000";
+const API_URL = "/api/telemetry";
 
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_URL}${path}`);
@@ -65,13 +64,13 @@ async function request<T>(path: string): Promise<T> {
 }
 
 export function fetchTraces(): Promise<TraceSummary[]> {
-  return request<TraceSummary[]>("/api/v1/traces");
+  return request<TraceSummary[]>("/traces");
 }
 
 export function fetchTrace(traceId: string): Promise<TraceDetail> {
-  return request<TraceDetail>(`/api/v1/traces/${encodeURIComponent(traceId)}`);
+  return request<TraceDetail>(`/traces/${encodeURIComponent(traceId)}`);
 }
 
 export function fetchStats(): Promise<TraceStats> {
-  return request<TraceStats>("/api/v1/stats");
+  return request<TraceStats>("/stats");
 }

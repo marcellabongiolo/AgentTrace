@@ -8,9 +8,9 @@ does not require authentication and exposes the API on port 8000.
 
 1. Select a hosting provider and a domain with HTTPS/TLS.
 2. Configure a reverse proxy or gateway with authentication and authorization
-   for **both** dashboard access and API requests. The browser currently makes
-   direct, unauthenticated calls to the API; setting `AGENTTRACE_API_KEY`
-   without adding a server-side proxy will break dashboard API access.
+   for **both** dashboard access and API requests. The dashboard uses a server-side read-only telemetry proxy, but this
+   does **not** authenticate browser users. Require gateway login for any
+   public deployment.
 3. Store API keys and other credentials in the hosting provider's secrets
    manager. Never commit secrets or pass them through `NEXT_PUBLIC_*` values.
 4. Restrict CORS to the deployed dashboard origin. CORS is **not** an
@@ -38,9 +38,11 @@ docker compose -f docker-compose.private.yml up --build
 ```
 
 The API then requires `Authorization: Bearer <key>` for telemetry routes.
-`/health` remains unauthenticated. The dashboard will not be able to read
-protected telemetry until you add a trusted server-side authenticated proxy;
-that is an explicit limitation of this intermediate configuration.
+`/health` remains unauthenticated. The Next.js server sends the secret to the
+API for read-only requests, while browser requests use `/api/telemetry/*`.
+**Important:** the proxy does not authenticate browser visitors; anyone who
+can access the dashboard can read telemetry. Keep the private stack bound to
+loopback, and require authenticated gateway access before public deployment.
 
 ## Recommended public architecture
 
@@ -51,7 +53,9 @@ Browser -- HTTPS --> authenticated gateway --> Next.js dashboard
 Python SDK -- HTTPS + secret bearer token ------------------^
 ```
 
-Do not put the ingestion API key in frontend JavaScript. A complete public
+Do not put the ingestion API key in frontend JavaScript. The current proxy
+reuses the API key for read requests; production should use separate
+read-only credentials. A complete public
 deployment should separate write-only ingestion credentials from browser
 read permissions, and use user sessions for dashboard access.
 

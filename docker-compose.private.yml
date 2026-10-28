@@ -25,8 +25,9 @@ services:
   dashboard:
     build:
       context: ./web
-      args:
-        NEXT_PUBLIC_AGENTTRACE_API_URL: http://localhost:8000
+    environment:
+      AGENTTRACE_INTERNAL_API_URL: http://api:8000
+      AGENTTRACE_API_KEY: ${AGENTTRACE_API_KEY:?Set AGENTTRACE_API_KEY before starting}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:
