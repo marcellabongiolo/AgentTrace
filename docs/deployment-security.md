@@ -34,7 +34,7 @@ Set the required key locally (do not commit the value):
 
 ```bash
 export AGENTTRACE_API_KEY="replace-with-a-long-random-secret"
-docker compose -f docker-compose.yml -f docker-compose.private.yml up --build
+docker compose -f docker-compose.private.yml up --build
 ```
 
 The API then requires `Authorization: Bearer <key>` for telemetry routes.
@@ -60,9 +60,9 @@ read permissions, and use user sessions for dashboard access.
 ```bash
 ruff check .
 pytest -q --cov=agenttrace --cov-report=term-missing
-docker compose -f docker-compose.yml -f docker-compose.private.yml config
+docker compose -f docker-compose.private.yml config
 ```
 
-The Docker Compose override is a hardening step, not evidence of a live
+The private Docker Compose stack is a hardening step, not evidence of a live
 deployment. Publishing the service requires external hosting configuration
 and a security review.
