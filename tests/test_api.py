@@ -90,3 +90,38 @@ def test_optional_api_key_protects_telemetry_routes(tmp_path):
 
     health = client.get("/health")
     assert health.status_code == 200
+
+
+def test_api_key_rejects_missing_and_incorrect_credentials(tmp_path):
+    client = TestClient(create_app(tmp_path / "auth.db", api_key="expected-secret"))
+    assert client.get("/api/v1/stats").status_code == 401
+    assert client.get(
+        "/api/v1/stats", headers={"Authorization": "Bearer wrong-secret"}
+    ).status_code == 401
+    assert client.post("/api/v1/traces", json=trace_payload()).status_code == 401
+    assert client.get(
+        "/api/v1/stats", headers={"Authorization": "Bearer expected-secret"}
+    ).status_code == 200
+
+
+def test_cors_only_allows_configured_dashboard_origin(tmp_path, monkeypatch):
+    monkeypatch.setenv("AGENTTRACE_CORS_ORIGINS", "https://dashboard.example.com")
+    client = TestClient(create_app(tmp_path / "cors.db", api_key="test-secret"))
+    allowed = client.options(
+        "/api/v1/traces",
+        headers={
+            "Origin": "https://dashboard.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "https://dashboard.example.com"
+
+    blocked = client.options(
+        "/api/v1/traces",
+        headers={
+            "Origin": "https://untrusted.example.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert "access-control-allow-origin" not in blocked.headers
