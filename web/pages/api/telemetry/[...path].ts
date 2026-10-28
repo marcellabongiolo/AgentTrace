@@ -28,12 +28,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const base = process.env.AGENTTRACE_INTERNAL_API_URL ?? DEFAULT_UPSTREAM;
   const key = process.env.AGENTTRACE_API_KEY;
-  if (!key) return res.status(503).json({ error: "Dashboard API credentials not configured" });
 
   try {
     const upstream = await fetch(new URL(path, base), {
       method: "GET",
-      headers: { Authorization: `Bearer ${key}` },
+      headers: key ? { Authorization: `Bearer ${key}` } : {},
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
