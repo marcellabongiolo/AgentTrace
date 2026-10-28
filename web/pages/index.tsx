@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TraceTree from "../components/TraceTree";
+import { filterTraces, traceHealth, TraceStatusFilter } from "../lib/monitoring";
 import {
   fetchStats,
   fetchTrace,
@@ -40,6 +41,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<TraceStats>(emptyStats);
   const [selected, setSelected] = useState<TraceDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TraceStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -64,6 +68,28 @@ export default function DashboardPage() {
 
     void load();
   }, []);
+
+  const visibleTraces = filterTraces(traces, search, statusFilter);
+  const health = traceHealth(traces);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const [nextTraces, nextStats] = await Promise.all([fetchTraces(), fetchStats()]);
+      setTraces(nextTraces);
+      setStats(nextStats);
+      if (selected && !nextTraces.some((trace) => trace.trace_id === selected.trace_id)) {
+        setSelected(null);
+      } else if (selected) {
+        setSelected(await fetchTrace(selected.trace_id));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const selectTrace = async (traceId: string) => {
     try {
@@ -115,11 +141,29 @@ export default function DashboardPage() {
           }}
         >
           {metric("Traces", stats.trace_count)}
+          {metric("Completed (recent)", health.completed)}
+          {metric("Running (recent)", health.running)}
+          {metric("Errors (recent)", health.errors)}
           {metric("Spans", stats.span_count)}
           {metric("Error rate", `${(stats.error_rate * 100).toFixed(1)}%`)}
           {metric("Avg duration", `${(stats.avg_duration * 1000).toFixed(1)} ms`)}
         </section>
 
+        <section aria-label="Trace monitoring controls" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+          <input aria-label="Search traces" placeholder="Search by agent name or trace ID" value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            style={{ flex: "1 1 230px", background: "#111827", border: "1px solid #334155", color: "#f8fafc", borderRadius: 8, padding: 10 }} />
+          <select aria-label="Filter trace status" value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as TraceStatusFilter)}
+            style={{ background: "#111827", border: "1px solid #334155", color: "#f8fafc", borderRadius: 8, padding: 10 }}>
+            <option value="all">All statuses</option><option value="success">Success</option>
+            <option value="error">Error</option><option value="running">Running</option>
+          </select>
+          <button type="button" disabled={refreshing} onClick={() => void refresh()}
+            style={{ background: "#1e293b", border: "1px solid #334155", color: "#f8fafc", borderRadius: 8, padding: "10px 16px", cursor: "pointer" }}>
+            {refreshing ? "Refreshing..." : "Refresh data"}
+          </button>
+        </section>
         {loading ? (
           <p style={{ color: "#94a3b8" }}>Loading traces...</p>
         ) : traces.length === 0 ? (
@@ -133,6 +177,8 @@ export default function DashboardPage() {
           >
             No traces yet. Run an instrumented agent with the Python SDK to populate the dashboard.
           </div>
+        ) : visibleTraces.length === 0 ? (
+          <p style={{ color: "#94a3b8" }}>No traces match these filters.</p>
         ) : (
           <div
             style={{
@@ -145,7 +191,7 @@ export default function DashboardPage() {
             <aside>
               <h2 style={{ fontSize: 17 }}>Recent traces</h2>
               <div style={{ display: "grid", gap: 8 }}>
-                {traces.map((trace) => (
+                {visibleTraces.map((trace) => (
                   <button
                     key={trace.trace_id}
                     onClick={() => void selectTrace(trace.trace_id)}
