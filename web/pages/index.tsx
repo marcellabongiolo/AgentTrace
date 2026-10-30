@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import TraceTree from "../components/TraceTree";
+import { isCurrentRequest } from "../lib/request-order";
 import { filterTraces, traceHealth, TraceStatusFilter } from "../lib/monitoring";
 import {
   fetchStats,
@@ -60,10 +61,10 @@ export default function DashboardPage() {
 
         if (traceList.length > 0) {
           const detail = await fetchTrace(traceList[0].trace_id);
-          if (requestId === selectionRequest.current) setSelected(detail);
+          if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
         }
       } catch (err) {
-        if (requestId === selectionRequest.current) setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
+        if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
       } finally {
         setLoading(false);
       }
@@ -82,17 +83,17 @@ export default function DashboardPage() {
     setError(null);
     try {
       const [nextTraces, nextStats] = await Promise.all([fetchTraces(), fetchStats()]);
-      if (requestId !== selectionRequest.current) return;
+      if (!isCurrentRequest(requestId, selectionRequest.current)) return;
       setTraces(nextTraces);
       setStats(nextStats);
       if (selected && !nextTraces.some((trace) => trace.trace_id === selected.trace_id)) {
         setSelected(null);
       } else if (selected) {
         const detail = await fetchTrace(selected.trace_id);
-        if (requestId === selectionRequest.current) setSelected(detail);
+        if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
       }
     } catch (err) {
-      if (requestId === selectionRequest.current) setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
+      if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
     } finally {
       setRefreshing(false);
     }
@@ -103,9 +104,9 @@ export default function DashboardPage() {
     try {
       setError(null);
       const detail = await fetchTrace(traceId);
-      if (requestId === selectionRequest.current) setSelected(detail);
+      if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
     } catch (err) {
-      if (requestId === selectionRequest.current) setError(err instanceof Error ? err.message : "Failed to load trace");
+      if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load trace");
     }
   };
 
