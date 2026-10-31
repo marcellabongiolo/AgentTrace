@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       method: "GET",
       headers: key ? { Authorization: `Bearer ${key}` } : {},
       cache: "no-store",
+      redirect: "error",
       signal: AbortSignal.timeout(5000),
     });
     if (!upstream.ok) {
