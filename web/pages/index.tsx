@@ -134,6 +134,7 @@ export default function DashboardPage() {
 
         {error && (
           <div
+            role="alert"
             style={{
               background: "#451a1a",
               border: "1px solid #7f1d1d",
@@ -179,7 +180,7 @@ export default function DashboardPage() {
           </button>
         </section>
         {loading ? (
-          <p style={{ color: "#94a3b8" }}>Loading traces...</p>
+          <p role="status" style={{ color: "#94a3b8" }}>Loading traces...</p>
         ) : traces.length === 0 ? (
           <div
             style={{
@@ -192,7 +193,7 @@ export default function DashboardPage() {
             No traces yet. Run an instrumented agent with the Python SDK to populate the dashboard.
           </div>
         ) : visibleTraces.length === 0 ? (
-          <p style={{ color: "#94a3b8" }}>No traces match these filters.</p>
+          <p role="status" style={{ color: "#94a3b8" }}>No traces match these filters.</p>
         ) : (
           <div
             style={{
@@ -208,6 +209,8 @@ export default function DashboardPage() {
                 {visibleTraces.map((trace) => (
                   <button
                     key={trace.trace_id}
+                    type="button"
+                    aria-pressed={selected?.trace_id === trace.trace_id}
                     onClick={() => void selectTrace(trace.trace_id)}
                     style={{
                       textAlign: "left",
