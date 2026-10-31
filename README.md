@@ -10,6 +10,8 @@ AgentTrace is a portfolio-scale observability platform for AI-agent applications
 
 The project records **application-provided events, tool calls, metrics and errors**. It does not attempt to capture hidden model chain-of-thought.
 
+**Portfolio status: completed local MVP.** The application, reproducible demo, automated checks, technical documentation and interview walkthrough are available in this repository. A public deployment and dashboard screenshots are optional future improvements, not prerequisites for reviewing the project.
+
 ## Portfolio highlights
 
 | Engineering area | Demonstrated implementation |
@@ -119,7 +121,7 @@ AgentTrace requires Python 3.10+.
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # macOS/Linux
-# Windows PowerShell: .\\.venv\\Scripts\\Activate.ps1
+# Windows PowerShell: .\.venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
 uvicorn agenttrace.api:app --reload
 ```
@@ -224,7 +226,9 @@ npm run typecheck
 npm run build
 ```
 
-The frontend suite includes component interaction tests using React Testing Library and jsdom; these simulate DOM interactions but are not end-to-end tests in a real browser.\n\nGitHub Actions runs the Python matrix on 3.10, 3.11 and 3.12, validates the Next.js build and builds both Docker images.
+The frontend suite includes component interaction tests using React Testing Library and jsdom; these simulate DOM interactions but are not end-to-end tests in a real browser.
+
+GitHub Actions runs the Python matrix on 3.10, 3.11 and 3.12, validates the Next.js build and builds both Docker images.
 
 ## Security and deployment notes
 
@@ -282,6 +286,16 @@ Before hosting AgentTrace publicly, read the [deployment and security checklist]
 The most useful files to inspect are [`agenttrace/sdk.py`](agenttrace/sdk.py) for instrumentation, [`agenttrace/api.py`](agenttrace/api.py) for the HTTP service, [`web/pages/index.tsx`](web/pages/index.tsx) for the dashboard, and [`web/tests/dashboard.test.tsx`](web/tests/dashboard.test.tsx) for UI interaction tests. The [architecture walkthrough](docs/architecture-and-demo.md) explains the complete data flow and design decisions.
 
 **Project scope:** This is a portfolio MVP. It is not a hosted SaaS, does not claim production-grade multi-tenant security, and does not collect hidden model reasoning. No live hosted demo or screenshots are included here; run the local reproducible demo above to inspect the actual UI.
+
+## Portfolio review checklist
+
+- [x] SDK, API, persistence and dashboard implemented
+- [x] Reproducible local demo without an LLM provider key
+- [x] Python and frontend automated tests in CI
+- [x] Architecture, security limitations and setup documented
+- [x] Reviewer entry points and code walkthrough documented
+- [ ] Optional: add verified screenshots from a running local dashboard
+- [ ] Optional: deploy behind authentication for a public live demo
 
 ## Roadmap
 
