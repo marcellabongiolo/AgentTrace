@@ -1,8 +1,27 @@
 # AgentTrace
 
+[![CI](https://github.com/marcellabongiolo/AgentTrace/actions/workflows/ci.yml/badge.svg)](https://github.com/marcellabongiolo/AgentTrace/actions/workflows/ci.yml)
+
+**Python SDK · FastAPI · SQLite · Next.js · TypeScript · Docker · GitHub Actions**
+
+> **Portfolio project:** An end-to-end, self-hosted observability MVP for inspecting instrumented AI-agent executions. Built to demonstrate API design, telemetry modeling, full-stack integration, automated testing, and deployment trade-offs.
+
 AgentTrace is a portfolio-scale observability platform for AI-agent applications. It provides a Python tracing SDK, a FastAPI ingestion/query service, SQLite persistence and a Next.js dashboard for inspecting structured execution telemetry.
 
 The project records **application-provided events, tool calls, metrics and errors**. It does not attempt to capture hidden model chain-of-thought.
+
+## Portfolio highlights
+
+| Engineering area | Demonstrated implementation |
+| --- | --- |
+| Instrumentation | Python decorators, nested spans, events, metrics and errors |
+| Backend | FastAPI ingestion/query endpoints and SQLite persistence |
+| Frontend | Next.js trace search, status filters, selection, refresh and span details |
+| Reliability | Request-order guards for overlapping dashboard operations |
+| Security | Optional bearer key and server-side read-only telemetry proxy |
+| Quality | Python tests, React interaction tests, lint, typecheck and Docker CI |
+
+**Suggested portfolio demo:** Start the local stack, generate three sample executions, search for an agent, filter by status, open a trace and inspect its nested spans. The demo uses synthetic telemetry and does not need an AI provider key.
 
 ## What is implemented
 
@@ -16,6 +35,7 @@ The project records **application-provided events, tool calls, metrics and error
 - Next.js + TypeScript dashboard connected to the live API.
 - Trace/span tree with events, metrics, status and latency.
 - Python unit, API, persistence and end-to-end integration tests.
+- Vitest tests for dashboard filtering, request ordering and React interactions (search, selection, refresh and errors).
 - Ruff linting, pytest coverage gate and GitHub Actions CI.
 - Docker images for the API and dashboard plus Docker Compose for local development.
 
@@ -98,7 +118,8 @@ AgentTrace requires Python 3.10+.
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # macOS/Linux
+# Windows PowerShell: .\\.venv\\Scripts\\Activate.ps1
 pip install -e ".[dev]"
 uvicorn agenttrace.api:app --reload
 ```
@@ -198,11 +219,12 @@ Validate the frontend with:
 ```bash
 cd web
 npm install
+npm test
 npm run typecheck
 npm run build
 ```
 
-GitHub Actions runs the Python matrix on 3.10, 3.11 and 3.12, validates the Next.js build and builds both Docker images.
+The frontend suite includes component interaction tests using React Testing Library and jsdom; these simulate DOM interactions but are not end-to-end tests in a real browser.\n\nGitHub Actions runs the Python matrix on 3.10, 3.11 and 3.12, validates the Next.js build and builds both Docker images.
 
 ## Security and deployment notes
 
@@ -254,6 +276,12 @@ Read the [architecture and demo guide](docs/architecture-and-demo.md) for compon
 ## Deployment security
 
 Before hosting AgentTrace publicly, read the [deployment and security checklist](docs/deployment-security.md). The default local stack is not designed for internet exposure. A separate `docker-compose.private.yml` provides loopback-only access with a mandatory API key, but a public dashboard still requires an authenticated server-side proxy.
+
+## For recruiters and reviewers
+
+The most useful files to inspect are [`agenttrace/sdk.py`](agenttrace/sdk.py) for instrumentation, [`agenttrace/api.py`](agenttrace/api.py) for the HTTP service, [`web/pages/index.tsx`](web/pages/index.tsx) for the dashboard, and [`web/tests/dashboard.test.tsx`](web/tests/dashboard.test.tsx) for UI interaction tests. The [architecture walkthrough](docs/architecture-and-demo.md) explains the complete data flow and design decisions.
+
+**Project scope:** This is a portfolio MVP. It is not a hosted SaaS, does not claim production-grade multi-tenant security, and does not collect hidden model reasoning. No live hosted demo or screenshots are included here; run the local reproducible demo above to inspect the actual UI.
 
 ## Roadmap
 
