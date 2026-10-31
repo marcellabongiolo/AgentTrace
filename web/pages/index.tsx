@@ -47,8 +47,10 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState<TraceStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
   const selectionRequest = useRef(0);
+  const refreshRequest = useRef(0);
 
   useEffect(() => {
+    let active = true;
     const requestId = ++selectionRequest.current;
     const load = async () => {
       try {
@@ -56,22 +58,23 @@ export default function DashboardPage() {
           fetchTraces(),
           fetchStats(),
         ]);
+        if (!active) return;
         setTraces(traceList);
         setStats(traceStats);
 
         if (traceList.length > 0) {
           const detail = await fetchTrace(traceList[0].trace_id);
-          if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
+          if (active && isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
         }
       } catch (err) {
-        if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
+        if (active && isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     void load();
-    return () => { selectionRequest.current += 1; };
+    return () => { active = false; selectionRequest.current += 1; refreshRequest.current += 1; };
   }, []);
 
   const visibleTraces = filterTraces(traces, search, statusFilter);
@@ -79,6 +82,7 @@ export default function DashboardPage() {
 
   const refresh = async () => {
     const requestId = ++selectionRequest.current;
+    const refreshId = ++refreshRequest.current;
     setRefreshing(true);
     setError(null);
     try {
@@ -95,7 +99,7 @@ export default function DashboardPage() {
     } catch (err) {
       if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
     } finally {
-      setRefreshing(false);
+      if (isCurrentRequest(refreshId, refreshRequest.current)) setRefreshing(false);
     }
   };
 
