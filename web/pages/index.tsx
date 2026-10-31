@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import TraceTree from "../components/TraceTree";
+import { isCurrentRequest } from "../lib/request-order";
 import { filterTraces, traceHealth, TraceStatusFilter } from "../lib/monitoring";
 import {
   fetchStats,
@@ -45,8 +46,10 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TraceStatusFilter>("all");
   const [error, setError] = useState<string | null>(null);
+  const selectionRequest = useRef(0);
 
   useEffect(() => {
+    const requestId = ++selectionRequest.current;
     const load = async () => {
       try {
         const [traceList, traceStats] = await Promise.all([
@@ -57,46 +60,53 @@ export default function DashboardPage() {
         setStats(traceStats);
 
         if (traceList.length > 0) {
-          setSelected(await fetchTrace(traceList[0].trace_id));
+          const detail = await fetchTrace(traceList[0].trace_id);
+          if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
+        if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load AgentTrace data");
       } finally {
         setLoading(false);
       }
     };
 
     void load();
+    return () => { selectionRequest.current += 1; };
   }, []);
 
   const visibleTraces = filterTraces(traces, search, statusFilter);
   const health = traceHealth(traces);
 
   const refresh = async () => {
+    const requestId = ++selectionRequest.current;
     setRefreshing(true);
     setError(null);
     try {
       const [nextTraces, nextStats] = await Promise.all([fetchTraces(), fetchStats()]);
+      if (!isCurrentRequest(requestId, selectionRequest.current)) return;
       setTraces(nextTraces);
       setStats(nextStats);
       if (selected && !nextTraces.some((trace) => trace.trace_id === selected.trace_id)) {
         setSelected(null);
       } else if (selected) {
-        setSelected(await fetchTrace(selected.trace_id));
+        const detail = await fetchTrace(selected.trace_id);
+        if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
+      if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to refresh monitoring data");
     } finally {
       setRefreshing(false);
     }
   };
 
   const selectTrace = async (traceId: string) => {
+    const requestId = ++selectionRequest.current;
     try {
       setError(null);
-      setSelected(await fetchTrace(traceId));
+      const detail = await fetchTrace(traceId);
+      if (isCurrentRequest(requestId, selectionRequest.current)) setSelected(detail);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load trace");
+      if (isCurrentRequest(requestId, selectionRequest.current)) setError(err instanceof Error ? err.message : "Failed to load trace");
     }
   };
 
