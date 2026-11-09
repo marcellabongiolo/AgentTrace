@@ -31,20 +31,20 @@ example below uses fixed, non-sensitive strings.
 
 ## Five-minute local demo
 
-Start the API and dashboard with Docker Compose from the repository root:
+Copy `.env.example` to `.env` and configure the API key, dashboard password and session secret using the [security guide](deployment-security.md). Start the API and dashboard with Docker Compose from the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-In another terminal, install the Python SDK and run the demonstration:
+In another terminal, export `AGENTTRACE_API_KEY` with the same value as `.env`, install the Python SDK and run the demonstration:
 
 ```bash
 python -m pip install -e .
 python -m agenttrace.examples.monitoring_demo --export --runs 3
 ```
 
-Open `http://localhost:3000` and click **Refresh data**. You should see
+Open `http://localhost:3000`, sign in with the configured password and click **Refresh data**. You should see
 `Document Research Agent` executions with nested `retrieve_documents`,
 `rank_results` and `prepare_summary` spans. The third run intentionally
 raises an exception to show how failures are represented.
@@ -62,10 +62,7 @@ python -m agenttrace.examples.monitoring_demo --export \
   --endpoint http://localhost:8000/api/v1/traces
 ```
 
-If the API is configured with `AGENTTRACE_API_KEY`, set the same key in the
-SDK environment. **Do not commit secrets.** Note that the browser dashboard
-does not provide an authenticated proxy, so a protected API needs an
-appropriate server-side access layer for browser access.
+Compose requires `AGENTTRACE_API_KEY`; set the same key in the SDK environment. **Do not commit secrets.** The Next.js server authenticates dashboard sessions and proxies approved read-only requests with the API key. The browser never receives this key.
 
 ### What is real vs. simulated?
 
@@ -81,7 +78,7 @@ appropriate server-side access layer for browser access.
 ruff check .
 pytest -q --cov=agenttrace --cov-report=term-missing
 cd web
-npm install
+npm ci
 npm test
 npm run typecheck
 npm run build
@@ -98,7 +95,7 @@ The repository CI also builds the API and dashboard Docker images.
 - **Optional API key** is a starting point, not full user authentication or
   authorization. Protect the deployment before exposing real telemetry.
 - **Manual refresh** is not streaming or real-time push monitoring.
-- Future improvements: OpenTelemetry adapters, role-based access, server-side
-  authenticated dashboard, rate limiting and deployment configuration.
+- **Dashboard login** uses shared-password, revocable in-memory sessions and bounded login attempts. It supports one process and has no individual identities. Public hosting still requires HTTPS, a private API and gateway limits.
+- Future improvements: OpenTelemetry adapters, role-based access, shared session storage and deployment automation.
 
 For the full repository overview, see [README](../README.md).

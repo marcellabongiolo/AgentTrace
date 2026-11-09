@@ -36,3 +36,5 @@ Shared-password login does not provide individual identities, password recovery,
 ## Validation
 
 CI runs Python tests, frontend unit and interaction tests, type checking, production build, dependency audit, Docker builds and both Compose configurations. The production HTTP smoke check starts the built Next.js application and verifies login, SSR protection, authenticated proxy access, origin checks, logout and captured-cookie rejection. This check does not replace real-browser or hosted HTTPS verification.
+
+Session design reference: [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html). This reference is guidance, not a security certification.
