@@ -37,10 +37,16 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+      - name: Verify production login, protected reads and logout
+        run: node tests/auth-smoke.mjs
       - run: npm audit --audit-level=high
 
   docker-build:
     runs-on: ubuntu-latest
+    env:
+      AGENTTRACE_API_KEY: ci-only-api-key
+      AGENTTRACE_DASHBOARD_PASSWORD: ci-only-dashboard-password
+      AGENTTRACE_SESSION_SECRET: ci-only-session-secret-at-least-32-characters
 
     steps:
       - uses: actions/checkout@v4
@@ -49,4 +55,6 @@ jobs:
       - name: Build dashboard image
         run: docker build -t agenttrace-dashboard:ci ./web
       - name: Validate compose file
-        run: docker compose config
+        run: |
+          docker compose config --quiet
+          docker compose -f docker-compose.private.yml config --quiet

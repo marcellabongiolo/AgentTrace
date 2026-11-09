@@ -1,3 +1,10 @@
+import type { GetServerSideProps } from "next";
+import { COOKIE, verifySession } from "../lib/session";
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!verifySession(req.cookies[COOKIE])) return { redirect: { destination: "/login", permanent: false } };
+  return { props: {} };
+};
 import React, { useEffect, useRef, useState } from "react";
 import TraceTree from "../components/TraceTree";
 import { isCurrentRequest } from "../lib/request-order";
@@ -126,6 +133,13 @@ export default function DashboardPage() {
     >
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <header style={{ marginBottom: 24 }}>
+          <button type="button" onClick={async () => {
+            try {
+              const response = await fetch("/api/logout", { method: "POST" });
+              if (response.ok) window.location.assign("/login");
+              else setError("Unable to sign out. Please retry.");
+            } catch { setError("Unable to sign out. Please retry."); }
+          }}>Sign out</button>
           <h1 style={{ margin: 0 }}>AgentTrace</h1>
           <p style={{ color: "#94a3b8", marginTop: 6 }}>
             Structured observability for AI-agent executions, tool calls, metrics and errors.

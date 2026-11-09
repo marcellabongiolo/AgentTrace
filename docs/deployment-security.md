@@ -1,72 +1,40 @@
-# Deployment and security checklist
+# Deployment security
 
-AgentTrace is a local/self-hosted MVP. **Do not expose the default Docker
-Compose stack directly to the public internet.** The default configuration
-does not require authentication and exposes the API on port 8000.
+AgentTrace is a single-instance, self-hosted portfolio MVP. Do not expose the API directly to the internet.
 
-## Prerequisites for a public deployment
+## Protected local setup
 
-1. Select a hosting provider and a domain with HTTPS/TLS.
-2. Configure a reverse proxy or gateway with authentication and authorization
-   for **both** dashboard access and API requests. The dashboard uses a server-side read-only telemetry proxy, but this
-   does **not** authenticate browser users. Require gateway login for any
-   public deployment.
-3. Store API keys and other credentials in the hosting provider's secrets
-   manager. Never commit secrets or pass them through `NEXT_PUBLIC_*` values.
-4. Restrict CORS to the deployed dashboard origin. CORS is **not** an
-   authentication mechanism.
-5. Mount a persistent volume for SQLite or migrate to a server database.
-   Configure backups and a telemetry retention policy.
-6. Add rate limits and request-size limits at the ingress proxy.
-7. Protect against sensitive data in telemetry: log only application-provided
-   non-secret event attributes, and use synthetic fixtures for public demos.
-8. Verify the full deployment with an authenticated ingestion request,
-   a trace-list request and the browser dashboard before announcing a URL.
+Copy `.env.example` to `.env` and configure:
 
-## Safer private-host deployment
+- `AGENTTRACE_API_KEY`: a random API credential used by the SDK and dashboard server.
+- `AGENTTRACE_DASHBOARD_PASSWORD`: a unique password of 12–256 characters.
+- `AGENTTRACE_SESSION_SECRET`: at least 32 random characters. Generate each secret independently, for example with `python -c "import secrets; print(secrets.token_urlsafe(32))"`.
+- `AGENTTRACE_DASHBOARD_ORIGIN`: exactly `http://localhost:3000` locally, or the exact HTTPS origin when hosted. No trailing slash. Other HTTP origins fail closed.
 
-For private access on a machine where you control the network, the provided
-`docker-compose.private.yml` override binds API and dashboard ports to
-loopback only and requires a non-empty API key. It is intended for SSH tunnels
-or a trusted authenticated gateway, **not** public exposure.
+Run `docker compose up --build`. Both Compose files bind API and dashboard ports to 127.0.0.1, require credentials and keep API credentials on the server. Sign in at http://localhost:3000. The SDK terminal must separately export the same API key; Python does not automatically load Compose's `.env`.
 
-Set the required key locally (do not commit the value):
+For development without Docker, configure dashboard variables in `web/.env.local`, plus `AGENTTRACE_INTERNAL_API_URL=http://localhost:8000` and the API key. Configure the API environment independently. Direct API execution still supports keyless trusted local use; always set the key before sharing a service.
 
-```bash
-export AGENTTRACE_API_KEY="replace-with-a-long-random-secret"
-docker compose -f docker-compose.private.yml up --build
-```
+## Session and request protections
 
-The API then requires `Authorization: Bearer <key>` for telemetry routes.
-`/health` remains unauthenticated. The Next.js server sends the secret to the
-API for read-only requests, while browser requests use `/api/telemetry/*`.
-**Important:** the proxy does not authenticate browser visitors; anyone who
-can access the dashboard can read telemetry. Keep the private stack bound to
-loopback, and require authenticated gateway access before public deployment.
+The dashboard, its server-rendered data and every telemetry proxy request require a session. Missing configuration denies access. Login and logout accept POST only and check the exact configured Origin. Login accepts JSON with a 1 KiB body limit and a maximum 256-character password. Password comparisons use fixed-length hashes and constant-time comparison.
 
-## Recommended public architecture
+Sessions use 32 random bytes. The process stores only hashes bound to the session secret, with an eight-hour lifetime. Cookies are HttpOnly, SameSite=Lax, host-only and scoped to /. HTTPS origins enable Secure cookies; loopback HTTP works for local Docker. Logout revokes the server-side session, so a copied cookie no longer works. Restarting the server invalidates all sessions. Never log passwords, API keys or cookies.
 
-```text
-Browser -- HTTPS --> authenticated gateway --> Next.js dashboard
-                          |
-                          +--> authenticated API proxy --> FastAPI --> SQLite/PostgreSQL
-Python SDK -- HTTPS + secret bearer token ------------------^
-```
+The in-memory session store is limited to 1,000 active sessions and supports one Node process only. Do not use multiple replicas or independent workers without a shared session store. Login permits five attempts per minute per socket address, with a bounded address map; it intentionally does not trust forwarded IP headers. A reverse proxy may make all visitors share one address. Configure gateway rate limits for public traffic; application limits alone are insufficient for distributed abuse.
 
-Do not put the ingestion API key in frontend JavaScript. The current proxy
-reuses the API key for read requests; production should use separate
-read-only credentials. A complete public
-deployment should separate write-only ingestion credentials from browser
-read permissions, and use user sessions for dashboard access.
+## Before public hosting
 
-## Verification
+1. Serve the dashboard through HTTPS. Set its exact external origin, preserve the browser Origin header, and forward only to the private dashboard port.
+2. Keep the upstream API private. Do not publicly map port 8000. Use a separate private ingestion path and protect its credentials; the API key authorizes both reads and writes.
+3. Apply gateway request-size, connection and rate limits. CORS is not authentication. Keep dashboard hosting to a single process until sessions use a shared store.
+4. Store credentials in the host secret manager; never use NEXT_PUBLIC variables for secrets. Back up SQLite, restrict volume access and define telemetry retention. Use synthetic demo traces.
+5. Test login, rejected unauthenticated reads, logout/replay rejection and HTTPS cookie behavior at the actual hosted origin.
 
-```bash
-ruff check .
-pytest -q --cov=agenttrace --cov-report=term-missing
-docker compose -f docker-compose.private.yml config
-```
+Shared-password login does not provide individual identities, password recovery, MFA, audit trails or tenant isolation. A publicly shared demo password allows all visitors to inspect the same telemetry. Use a dedicated synthetic-data instance or an identity-aware gateway for broader access.
 
-The private Docker Compose stack is a hardening step, not evidence of a live
-deployment. Publishing the service requires external hosting configuration
-and a security review.
+## Validation
+
+CI runs Python tests, frontend unit and interaction tests, type checking, production build, dependency audit, Docker builds and both Compose configurations. The production HTTP smoke check starts the built Next.js application and verifies login, SSR protection, authenticated proxy access, origin checks, logout and captured-cookie rejection. This check does not replace real-browser or hosted HTTPS verification.
+
+Session design reference: [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html). This reference is guidance, not a security certification.

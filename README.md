@@ -20,7 +20,7 @@ The project records **application-provided events, tool calls, metrics and error
 | Backend | FastAPI ingestion/query endpoints and SQLite persistence |
 | Frontend | Next.js trace search, status filters, selection, refresh and span details |
 | Reliability | Request-order guards for overlapping dashboard operations |
-| Security | Optional bearer key and server-side read-only telemetry proxy |
+| Security | Dashboard login, revocable sessions and server-side read-only telemetry proxy |
 | Quality | Python tests, React interaction tests, lint, typecheck and Docker CI |
 
 **Suggested portfolio demo:** Start the local stack, generate three sample executions, search for an agent, filter by status, open a trace and inspect its nested spans. The demo uses synthetic telemetry and does not need an AI provider key.
@@ -47,7 +47,7 @@ You can explore the entire SDK → API → database → dashboard flow locally
 **without an LLM provider key**. The example generates deterministic,
 application-provided telemetry; it does not make external AI model calls.
 
-Start the stack:
+Copy `.env.example` to `.env`, configure the three credentials described in the [security guide](docs/deployment-security.md), then start the stack:
 
 ```bash
 docker compose up --build
@@ -60,7 +60,9 @@ python -m pip install -e .
 python -m agenttrace.examples.monitoring_demo --export --runs 3
 ```
 
-Open [the local dashboard](http://localhost:3000) and click **Refresh data**.
+Export `AGENTTRACE_API_KEY` in the demo terminal using the same key as `.env` (Compose reads `.env`; Python does not load it automatically).
+
+Open [the local dashboard](http://localhost:3000), sign in and click **Refresh data**.
 The sample includes successful executions, nested spans, tool-call events,
 metrics and an intentionally failed execution.
 
@@ -101,6 +103,8 @@ Requirements: Docker and Docker Compose.
 ```bash
 git clone https://github.com/marcellabongiolo/AgentTrace.git
 cd AgentTrace
+cp .env.example .env
+# Edit .env: configure API key, dashboard password and session secret.
 docker compose up --build
 ```
 
@@ -110,7 +114,7 @@ Then open:
 - API health: `http://localhost:8000/health`
 - API docs: `http://localhost:8000/docs`
 
-The Compose stack stores SQLite data in a named Docker volume.
+The Compose stack stores SQLite data in a named Docker volume and binds both ports to loopback. The dashboard requires a password of at least 12 characters and a random session secret of at least 32 characters. Both Compose files provide the same protected local setup.
 
 ## Local development
 
@@ -128,7 +132,7 @@ uvicorn agenttrace.api:app --reload
 
 ### Dashboard
 
-In another terminal:
+Configure `AGENTTRACE_DASHBOARD_PASSWORD`, `AGENTTRACE_SESSION_SECRET` and `AGENTTRACE_DASHBOARD_ORIGIN` in `web/.env.local` (see the security guide). In another terminal:
 
 ```bash
 cd web
@@ -236,7 +240,7 @@ This repository is designed as a strong local/self-hosted MVP, not a multi-tenan
 
 - API-key authentication is optional and intentionally simple.
 - SQLite is appropriate for the local MVP; a production deployment would normally use a server database.
-- The browser dashboard does not receive API secrets; its Next.js server proxies read-only telemetry requests. This proxy does not authenticate dashboard users: require a login-capable gateway before public deployment.
+- The browser dashboard does not receive API secrets; its Next.js server proxies read-only telemetry requests. Dashboard routes require a shared-password session. Public hosting additionally requires HTTPS, gateway rate limits and a private upstream API (see the security guide).
 - No provider-specific OpenAI, Anthropic, LangChain, CrewAI or AutoGen integration is claimed yet.
 - Prompt replay, distributed tracing backends, retention policies and automated guardrails are future extensions rather than implemented features.
 
@@ -279,7 +283,7 @@ Read the [architecture and demo guide](docs/architecture-and-demo.md) for compon
 
 ## Deployment security
 
-Before hosting AgentTrace publicly, read the [deployment and security checklist](docs/deployment-security.md). The default local stack is not designed for internet exposure. A separate `docker-compose.private.yml` provides loopback-only access with a mandatory API key, but a public dashboard still requires an authenticated server-side proxy.
+Before hosting AgentTrace publicly, read the [deployment and security checklist](docs/deployment-security.md). The default local stack is not designed for internet exposure. Both Compose files provide loopback-only access, a mandatory API key and dashboard login. Public hosting still requires the deployment controls described in the guide.
 
 ## For recruiters and reviewers
 
@@ -299,7 +303,7 @@ The most useful files to inspect are [`agenttrace/sdk.py`](agenttrace/sdk.py) fo
 
 ## Roadmap
 
-Possible next steps include PostgreSQL storage, OpenTelemetry adapters, retention controls, server-side dashboard authentication and optional framework integrations.
+Possible next steps include PostgreSQL storage, OpenTelemetry adapters, retention controls, individual user accounts and optional framework integrations.
 
 ## License
 

@@ -1,3 +1,4 @@
+vi.mock("./session", () => ({ COOKIE: "agenttrace_session", configuration: () => ({}), verifySession: () => true }));
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextApiRequest, NextApiResponse } from "next";
 import handler from "../pages/api/telemetry/[...path]";
