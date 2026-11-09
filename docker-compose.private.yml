@@ -26,6 +26,9 @@ services:
     build:
       context: ./web
     environment:
+      AGENTTRACE_DASHBOARD_PASSWORD: ${AGENTTRACE_DASHBOARD_PASSWORD:?Set a dashboard password of at least 12 characters}
+      AGENTTRACE_SESSION_SECRET: ${AGENTTRACE_SESSION_SECRET:?Set a random session secret of at least 32 characters}
+      AGENTTRACE_DASHBOARD_ORIGIN: ${AGENTTRACE_DASHBOARD_ORIGIN:-http://localhost:3000}
       AGENTTRACE_INTERNAL_API_URL: http://api:8000
       AGENTTRACE_API_KEY: ${AGENTTRACE_API_KEY:?Set AGENTTRACE_API_KEY before starting}
     ports:

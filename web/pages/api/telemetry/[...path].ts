@@ -1,3 +1,4 @@
+import { COOKIE, configuration, verifySession } from "../../../lib/session";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const DEFAULT_UPSTREAM = "http://api:8000";
@@ -19,6 +20,8 @@ export function resolveTelemetryPath(query: NextApiRequest["query"]): string | n
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "no-store");
+  if (!configuration()) return res.status(503).json({ error: "Login unavailable" });
+  if (!verifySession(req.cookies?.[COOKIE])) return res.status(401).json({ error: "Sign in required" });
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
