@@ -132,7 +132,7 @@ In another terminal:
 
 ```bash
 cd web
-npm install
+npm ci
 npm run dev
 ```
 
@@ -220,7 +220,7 @@ Validate the frontend with:
 
 ```bash
 cd web
-npm install
+npm ci
 npm test
 npm run typecheck
 npm run build
@@ -303,4 +303,4 @@ Possible next steps include PostgreSQL storage, OpenTelemetry adapters, retentio
 
 ## License
 
-The package metadata currently declares Apache-2.0. A production open-source release should include the full license file and release process before publishing to a package registry.
+Licensed under [Apache-2.0](LICENSE). Package-registry publishing and release automation are not configured.

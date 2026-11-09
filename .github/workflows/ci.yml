@@ -33,8 +33,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm install
-      - run: node -e "console.log('AUDIT_LOCK_START' + JSON.stringify(require('./package-lock.json')) + 'AUDIT_LOCK_END')"
+      - run: npm ci
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
