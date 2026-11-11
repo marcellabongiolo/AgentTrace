@@ -28,6 +28,8 @@ services:
     environment:
       AGENTTRACE_INTERNAL_API_URL: http://api:8000
       AGENTTRACE_API_KEY: ${AGENTTRACE_API_KEY:?Set AGENTTRACE_API_KEY before starting}
+      AGENTTRACE_DASHBOARD_PASSWORD: ${AGENTTRACE_DASHBOARD_PASSWORD:?Set dashboard password}
+      AGENTTRACE_SESSION_SECRET: ${AGENTTRACE_SESSION_SECRET:?Set a random 32+ character session secret}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

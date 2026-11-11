@@ -8,9 +8,9 @@ does not require authentication and exposes the API on port 8000.
 
 1. Select a hosting provider and a domain with HTTPS/TLS.
 2. Configure a reverse proxy or gateway with authentication and authorization
-   for **both** dashboard access and API requests. The dashboard uses a server-side read-only telemetry proxy, but this
-   does **not** authenticate browser users. Require gateway login for any
-   public deployment.
+   for **both** dashboard access and API requests. The dashboard uses a server-side read-only telemetry proxy and a signed
+   cookie login for a single shared dashboard password. For public production,
+   add per-user identity, access controls and gateway protections.
 3. Store API keys and other credentials in the hosting provider's secrets
    manager. Never commit secrets or pass them through `NEXT_PUBLIC_*` values.
 4. Restrict CORS to the deployed dashboard origin. CORS is **not** an
@@ -34,15 +34,19 @@ Set the required key locally (do not commit the value):
 
 ```bash
 export AGENTTRACE_API_KEY="replace-with-a-long-random-secret"
+export AGENTTRACE_DASHBOARD_PASSWORD="replace-with-a-strong-private-password"
+export AGENTTRACE_SESSION_SECRET="replace-with-a-separate-random-secret-at-least-32-characters"
 docker compose -f docker-compose.private.yml up --build
 ```
 
 The API then requires `Authorization: Bearer <key>` for telemetry routes.
 `/health` remains unauthenticated. The Next.js server sends the secret to the
 API for read-only requests, while browser requests use `/api/telemetry/*`.
-**Important:** the proxy does not authenticate browser visitors; anyone who
-can access the dashboard can read telemetry. Keep the private stack bound to
-loopback, and require authenticated gateway access before public deployment.
+The dashboard now requires a shared-password login and uses an eight-hour,
+HttpOnly signed session cookie. This is suitable for a small private demo,
+**not** production multi-user authorization. Login has no built-in rate
+limiting, so add ingress rate limits and HTTPS before internet exposure.
+Keep the private stack bound to loopback until that work is complete.
 
 ## Recommended public architecture
 
